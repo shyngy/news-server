@@ -9,6 +9,8 @@ import { PostEntity } from './post/entities/post.entity';
 import { CommentModule } from './comment/comment.module';
 import { CommentEntity } from './comment/entities/comment.entity';
 import { ConfigModule } from '@nestjs/config';
+import { AuthModule } from './auth/auth.module';
+import { AuthEntity } from './auth/entities/auth.entity';
 
 @Module({
   imports: [
@@ -20,12 +22,13 @@ import { ConfigModule } from '@nestjs/config';
       username: process.env.USER_NAME_PG,
       password: process.env.PASSWORD_PG,
       database: process.env.DATABASE_PG,
-      entities: [UserEntity, PostEntity, CommentEntity],
+      entities: [UserEntity, PostEntity, CommentEntity, AuthEntity],
       synchronize: true,
     }),
     UserModule,
     PostModule,
     CommentModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
