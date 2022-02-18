@@ -5,6 +5,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity';
 import { FindOneOptions, Repository } from 'typeorm';
 import { LoginUserDto } from './dto/login-user.dto';
+import { SearchPostDto } from '../post/dto/search-post.dto';
+import { SearchingUserDto } from './dto/searching-user.dto';
 
 @Injectable()
 export class UserService {
@@ -26,11 +28,28 @@ export class UserService {
   findByCond(cond: LoginUserDto) {
     return this.repository.findOne(cond);
   }
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  update(id: number, dto: UpdateUserDto) {
+    return this.repository.update(id, dto);
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async search(dto: SearchingUserDto) {
+    const queryBuilder = this.repository.createQueryBuilder('user');
+    const iLike = (value: string, dtoValue) => {
+      if (!dtoValue) return;
+      queryBuilder.andWhere(`user.${value} ILIKE :${value}`);
+    };
+    queryBuilder.limit(dto.limit || 0);
+    queryBuilder.take(dto.take || 10);
+
+    iLike('fullName', dto.fullName);
+    iLike('email', dto.email);
+
+    queryBuilder.setParameters({
+      fullName: `%${dto.fullName}%`,
+      email: `%${dto.email}%`,
+    });
+
+    const [posts, count] = await queryBuilder.getManyAndCount();
+    return { posts, count };
   }
 }
