@@ -28,7 +28,6 @@ export function UniqueOnDatabase(
   entity: unknown,
   validationOptions?: ValidationOptions,
 ) {
-  console.log(entity);
   validationOptions = {
     ...{ message: '$value already exists. Choose another.' },
     ...validationOptions,

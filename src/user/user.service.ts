@@ -18,12 +18,14 @@ export class UserService {
     return this.repository.save(dto);
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findAll() {
+    const users = await this.repository.find({ select: ['fullName', 'id'] });
+    return users;
   }
 
-  findById(id: number) {
-    return this.repository.findOne(id);
+  async findById(id: number) {
+    const { password, ...user } = await this.repository.findOne(id);
+    return user;
   }
   findByCond(cond: LoginUserDto) {
     return this.repository.findOne(cond);

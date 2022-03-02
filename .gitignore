@@ -36,4 +36,3 @@ lerna-debug.log*
 .env
 /pgadmin
 /pgdata
-docker-compose.yml

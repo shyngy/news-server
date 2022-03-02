@@ -1,11 +1,9 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
   Patch,
   Param,
-  Delete,
   UseGuards,
   Request,
   Query,
@@ -28,13 +26,12 @@ export class UserController {
   @UseGuards(JwtAuthGuard)
   @Get('me')
   getProfile(@Request() req) {
-    return req.user;
+    return this.userService.findById(req.user.id);
   }
 
   @UseGuards(JwtAuthGuard)
   @Patch('me')
   update(@Request() req, @Body() updateUserDto: UpdateUserDto) {
-    console.log(req.user.id);
     return this.userService.update(+req.user.id, updateUserDto);
   }
 
