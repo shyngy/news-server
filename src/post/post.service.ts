@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -6,14 +10,60 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { PostEntity } from './entities/post.entity';
 import { SearchPostDto } from './dto/search-post.dto';
+import { UserEntity } from 'src/user/entities/user.entity';
+import { find } from 'rxjs';
 
+type SearchPostKeys = keyof SearchPostDto;
+type SearchPostValue = SearchPostDto[SearchPostKeys];
 @Injectable()
 export class PostService {
   constructor(
     @InjectRepository(PostEntity) private repository: Repository<PostEntity>,
   ) {}
-  create(dto: CreatePostDto) {
-    return this.repository.save(dto);
+  create(dto: CreatePostDto, userId: number) {
+    const firstParagraph = dto.body.find((obj) => obj.type === 'paragraph')
+      ?.data?.text;
+
+    return this.repository.save({
+      title: dto.title,
+      body: dto.body,
+      tags: dto.tags,
+      user: {
+        id: userId,
+      },
+      description: firstParagraph || '',
+    });
+  }
+
+  async update(id: number, dto: UpdatePostDto, userId: number) {
+    const foundPost = await this.repository.findOne(id);
+    if (!foundPost) {
+      throw new NotFoundException('Статья не найдена');
+    }
+    const firstParagraph = dto.body.find((obj) => obj.type === 'paragraph')
+      ?.data?.text;
+
+    return this.repository.update(id, {
+      title: dto.title,
+      body: dto.body,
+      tags: dto.tags,
+      user: {
+        id: userId,
+      },
+      description: firstParagraph || '',
+    });
+  }
+
+  async remove(id: number, userId: number) {
+    const foundPost = await this.repository.findOne(id);
+    if (!foundPost) {
+      throw new NotFoundException('Статья не найдена');
+    }
+
+    if (foundPost.user.id !== userId) {
+      throw new ForbiddenException('Нет доступа к статье');
+    }
+    return this.repository.delete(id);
   }
 
   findAll() {
@@ -31,8 +81,10 @@ export class PostService {
   }
 
   async search(dto: SearchPostDto) {
-    const queryBuilder = this.repository.createQueryBuilder('post');
-    const iLike = (value: string, dtoValue) => {
+    const queryBuilder = this.repository
+      .createQueryBuilder('post')
+      .leftJoinAndSelect('posts.user', 'user');
+    const iLike = (value: string, dtoValue: SearchPostValue) => {
       if (!dtoValue) return;
       // where перетирает значение
       // нужно использовать andWhere чтобы отправлять несколько query запросов
@@ -66,23 +118,15 @@ export class PostService {
         views: () => 'views + 1',
       })
       .execute();
+    const findOne = await this.repository.findOne(id);
+    const { password, ...user } = findOne.user;
+
+    const newObj = {
+      ...findOne,
+      user,
+    };
+    console.log(newObj);
 
     return this.repository.findOne(id);
-  }
-
-  async update(id: number, dto: UpdatePostDto) {
-    const foundPost = await this.repository.findOne(id);
-    if (!foundPost) {
-      throw new NotFoundException('Статия не найдена');
-    }
-    return this.repository.update(id, dto);
-  }
-
-  async remove(id: number) {
-    const foundPost = await this.repository.findOne(id);
-    if (!foundPost) {
-      throw new NotFoundException('Статия не найдена');
-    }
-    return this.repository.delete(id);
   }
 }
