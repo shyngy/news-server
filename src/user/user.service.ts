@@ -7,6 +7,8 @@ import { FindOneOptions, Repository } from 'typeorm';
 import { LoginUserDto } from './dto/login-user.dto';
 import { SearchPostDto } from '../post/dto/search-post.dto';
 import { SearchingUserDto } from './dto/searching-user.dto';
+import { CommentEntity } from 'src/comment/entities/comment.entity';
+import { UserWithCommentsCount } from './user.types';
 
 @Injectable()
 export class UserService {
@@ -19,8 +21,25 @@ export class UserService {
   }
 
   async findAll() {
-    const users = await this.repository.find({ select: ['fullName', 'id'] });
-    return users;
+    // const users = await this.repository.find({ select: ['fullName', 'id'] });
+    const users: UserWithCommentsCount[] = await (<any>(
+      this.repository
+        .createQueryBuilder('u')
+        .leftJoinAndMapMany(
+          'u.comments',
+          CommentEntity,
+          'comment',
+          'comment.userId = u.id',
+        )
+        .loadRelationCountAndMap('u.commentsCount', 'u.comments', 'comments')
+        .select(['u.fullName', 'u.id'])
+        .getMany()
+    ));
+
+    return users.map((user) => ({
+      ...user,
+      commentsCount: user.commentsCount * 2,
+    }));
   }
 
   async findById(id: number) {

@@ -8,6 +8,7 @@ import {
   Delete,
   Query,
   UseGuards,
+  Response,
 } from '@nestjs/common';
 import { PostService } from './post.service';
 import { CreatePostDto } from './dto/create-post.dto';
@@ -55,6 +56,8 @@ export class PostController {
 
   @Get('/search')
   SearchPosts(@Query() dto: SearchPostDto) {
+    console.log(dto);
+
     return this.postService.search(dto);
   }
 

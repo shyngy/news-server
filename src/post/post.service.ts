@@ -68,7 +68,7 @@ export class PostService {
 
   findAll() {
     return this.repository.find({
-      order: { createAt: 'DESC' },
+      order: { createdAt: 'DESC' },
     });
   }
 
@@ -83,7 +83,7 @@ export class PostService {
   async search(dto: SearchPostDto) {
     const queryBuilder = this.repository
       .createQueryBuilder('post')
-      .leftJoinAndSelect('posts.user', 'user');
+      .leftJoinAndSelect('post.user', 'user');
     const iLike = (value: string, dtoValue: SearchPostValue) => {
       if (!dtoValue) return;
       // where перетирает значение
@@ -125,7 +125,6 @@ export class PostService {
       ...findOne,
       user,
     };
-    console.log(newObj);
 
     return this.repository.findOne(id);
   }
